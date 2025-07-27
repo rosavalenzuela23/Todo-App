@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from pydantic.dataclasses import Field, dataclass
+from pydantic.dataclasses import dataclass
+from pydantic.fields import Field
 import uuid
 
 class Task(BaseModel):

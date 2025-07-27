@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Response, status
 from models import User, UserModel
+from utils.security import get_password_hash, verify_password
 
 router = APIRouter(prefix="/users")
 
@@ -11,9 +12,21 @@ async def get_users():
 
 @router.post("/login")
 async def login(response: Response, user: User):
-    registered_user = [user for user in lista_usuarios if user.name == user.name and user.password == user.password]
+
+    unauthorize_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid credentials", 
+                            headers={"WWW-Authenticate": "Bearer"})
+
+    registered_user = [user for user in lista_usuarios if user.name == user.name]
     if not registered_user:
-        return {"message": "User not found"}
+        raise unauthorize_error
+    
+    model = registered_user[0]
+
+    valid = verify_password(user.password, model.password)
+
+    if (not valid):
+        raise unauthorize_error
 
     response.set_cookie("token", registered_user[0].name)
     #Generate token
@@ -25,6 +38,7 @@ async def register(user: User):
         return {"message": "User already exists"}
     
     new_user = UserModel(**user.model_dump())
+    new_user.password = get_password_hash(new_user.password)
     lista_usuarios.append(new_user)
     
     return {"message": "User registered"}
